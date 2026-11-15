@@ -41,7 +41,7 @@ kubectl argo rollouts get rollout podinfo -n canary-demo --watch
 ```
 
 Also open the Rollouts dashboard (<http://localhost:3100/rollouts/canary-demo>) and the Argo CD
-UI for `canary-demo`.
+UI for `canary-demo` (<https://localhost:8080/applications/argocd/canary-demo>, port-forward from lab 03).
 
 ---
 

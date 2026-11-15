@@ -162,6 +162,7 @@ kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:909
 kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80  # admin / admin
 ```
 
+* Argo CD: <https://localhost:8080> (HTTPS, self-signed; the port-forward from lab 03)
 * Rollouts dashboard: <http://localhost:3100/rollouts>
 * Prometheus: <http://localhost:9090/targets>. The `argo-rollouts-metrics` target should be **UP**.
 * Grafana: <http://localhost:3000>

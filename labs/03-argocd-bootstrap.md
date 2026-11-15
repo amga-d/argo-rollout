@@ -29,9 +29,10 @@ global:
   domain: argocd.lab.local
 
 configs:
-  params:
-    # TLS is terminated nowhere in this lab; serve plain HTTP behind port-forward.
-    server.insecure: true
+  # TLS stays ON (the chart default, server.insecure: false). argocd-server generates a
+  # self-signed certificate and serves HTTPS and gRPC on port 443. Lab clients skip the
+  # certificate check (--insecure on the CLI, "proceed" in the browser) because nothing
+  # in the lab issues a trusted certificate. The connection is still encrypted.
   cm:
     # Pull-based: how often Argo CD polls Git (default 120s + jitter).
     # A laptop cluster can't receive GitHub webhooks, so polling is the only trigger.
@@ -80,18 +81,36 @@ kubectl -n argocd get pods
 ## 3.3 Log in
 
 ```bash
-# Terminal A: keep this running
-kubectl -n argocd port-forward svc/argocd-server 8080:80
+# Terminal A: keep this running. Service ports 80 and 443 both reach the same container
+# port (8080), which serves HTTPS and gRPC; 443 just makes the intent obvious.
+kubectl -n argocd port-forward svc/argocd-server 8080:443
 
 # Terminal B
 export ARGOCD_PWD=$(kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d)
 echo "$ARGOCD_PWD"
-argocd login localhost:8080 --username admin --password "$ARGOCD_PWD" --plaintext
+argocd login localhost:8080 --username admin --password "$ARGOCD_PWD" --insecure
 argocd cluster list
 ```
 
-UI: <http://localhost:8080> (user `admin`).
+UI: <https://localhost:8080> (user `admin`). The browser warns about the self-signed
+certificate; accept it once ("Advanced → Proceed").
+
+> **`--insecure` vs `--plaintext`.** The CLI always speaks TLS unless told otherwise.
+> `--insecure` keeps TLS and only skips verifying the certificate, which is what a self-signed
+> lab cert needs. `--plaintext` drops TLS entirely and only works if the server was installed
+> with `server.insecure: true`. That is how the two get mixed up: a plaintext CLI against a TLS
+> server, or the reverse, fails with errors such as `transport: authentication handshake
+> failed` or `EOF`.
+>
+> The login is saved in `~/.config/argocd/config` together with the "insecure" choice, so later
+> `argocd app ...` commands need no extra flags. If the port-forward drops, restart it and
+> re-run the same `argocd login`.
+>
+> **Already installed with `server.insecure: true`?** Remove that line from
+> `bootstrap/argocd-values.yaml`, re-run the `helm upgrade --install` from 3.2, then
+> `kubectl -n argocd rollout restart deploy/argocd-server` (the server reads this parameter
+> only at start-up), and re-login as above.
 
 ## 3.4 AppProjects
 

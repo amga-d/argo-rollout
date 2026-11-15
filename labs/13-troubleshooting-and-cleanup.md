@@ -32,6 +32,8 @@ kubectl -n <ns> get analysisrun <name> -o json | jq '.status.metricResults[] | {
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
+| `argocd login` fails: `authentication handshake failed`, `EOF`, or `x509: certificate signed by unknown authority` | CLI flags don't match the server's TLS mode (`--plaintext` against a TLS server, or no `--insecure` with the self-signed cert), or the port-forward died | Forward `svc/argocd-server 8080:443`, then `argocd login localhost:8080 --insecure` (no `--plaintext`). Behind a proxy that breaks gRPC, add `--grpc-web` |
+| Browser jumps from `http://localhost:8080` to `https://` and shows a certificate warning | Expected: TLS is on and argocd-server redirects HTTP to HTTPS; the certificate is self-signed | Accept the warning once ("Advanced → Proceed") |
 | App stays `OutOfSync`, never syncs | Automated sync is off, or the sync failed | `argocd app get <app>` for the error; `argocd app sync <app>` |
 | `the server could not find the requested resource` / `no matches for kind Rollout` | CRDs not installed yet (ordering) | Wait for the retry; check `SkipDryRunOnMissingResource=true`; check that the `argo-rollouts` app is Healthy |
 | kube-prometheus-stack sync fails: `metadata.annotations: Too long` | Client-side apply on huge CRDs | `ServerSideApply=true` |
