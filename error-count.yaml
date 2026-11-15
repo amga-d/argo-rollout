@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisRun
+metadata:
+  generateName: sandbox-error-count-
+
+spec:
+  args:
+    - name: namespace
+      value: canary-demo
+    - name: pod-template-hash
+      value: 565955bc59
+  metrics:
+    - name: error-count
+      interval: 10s
+      count: 3
+      failureCondition: len(result) > 0 && !isNaN(result[0]) && result[0] > 5
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum by (rollouts_pod_template_hash) (increase(http_requests_total{
+                namespace="canary-demo", status="500"} [1m] ))
