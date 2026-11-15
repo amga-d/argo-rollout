@@ -179,6 +179,7 @@ spec:
     - name: service-url            # e.g. http://podinfo-preview.bluegreen-demo.svc.cluster.local
   metrics:
     - name: smoke-test
+      initialDelay: 30s
       provider:
         job:
           spec:
